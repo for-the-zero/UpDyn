@@ -5,6 +5,7 @@ var uid_list = [];
 const e_uidadd = $('.uid-add');
 const e_uidimp = $('.uid-import');
 const e_uidexp = $('.uid-export');
+const e_uidlist = $('.uid-list');
 
 e_uidadd.on('click',()=>{
     mdui.prompt({
@@ -80,7 +81,27 @@ e_uidexp.on('click',()=>{
     navigator.clipboard.writeText(JSON.stringify(uid_list));
     mdui.snackbar({message: "导出成功",closeable: true});
 });
-
 function reflash_uid_list(){
-    //TODO:
+    e_uidlist.empty();
+    for(var i=0;i<uid_list.length;i++){
+        let item = $(`<mdui-list-item>
+            ${uid_list[i]}
+            <mdui-button-icon icon="keyboard_arrow_up" slot="end-icon" class="uid-top"></mdui-button-icon>
+            <mdui-button-icon icon="clear" slot="end-icon" class="uid-del"></mdui-button-icon>
+            </mdui-list-item>`
+        );
+        item.find('.uid-top').on('click',function(){
+            let index = uid_list.indexOf(parseInt(item.text()));
+            let temp = uid_list[index];
+            uid_list.splice(index,1);
+            uid_list.unshift(temp);
+            reflash_uid_list();
+        });
+        item.find('.uid-del').on('click',function(){
+            let index = uid_list.indexOf(parseInt(item.text()));
+            uid_list.splice(index,1);
+            reflash_uid_list();
+        });
+        e_uidlist.append(item);
+    };
 };
