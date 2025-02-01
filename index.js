@@ -1,0 +1,1 @@
+mdui.setColorScheme('#DD0066');

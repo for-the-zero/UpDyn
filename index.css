@@ -1,0 +1,14 @@
+body{
+    font-family: 'Google Sans', 'Noto Sans SC';
+}
+mdui-tabs{
+    height: 100%;
+    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+}
+mdui-tab-panel{
+    padding: 20px;
+    overflow-y: auto;
+}

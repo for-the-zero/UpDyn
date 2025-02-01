@@ -4,24 +4,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UP主动态查看器</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC&display=swap">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/mdui@2/mdui.css">
+    <script src="https://unpkg.com/mdui@2/mdui.global.js"></script>
     <link rel="stylesheet" href="index.css">
 </head>
 <body>
-    <fluent-tabs orientation="vertical" appearance="subtle" size="large">
-        <fluent-tab>First Tab</fluent-tab>
-        <fluent-tab>Second Tab</fluent-tab>
-        <fluent-tab>Third Tab</fluent-tab>
-        <fluent-tab>Fourth Tab</fluent-tab>
-        <fluent-tab-panel>Tab One Content</fluent-tab-panel>
-        <fluent-tab-panel>Tab Two Content</fluent-tab-panel>
-        <fluent-tab-panel>Tab Three Content</fluent-tab-panel>
-        <fluent-tab-panel>Tab Four Content</fluent-tab-panel>
-    </fluent-tabs>
+    <mdui-tabs value="set" placement="left">
+        <mdui-tab value="set">主页</mdui-tab>
+        <mdui-tab value="test">test</mdui-tab>
+        <mdui-tab-panel slot="panel" value="set">
+            <h1>UP主动态查看器 - 主页</h1>
+            <p>仅提供查看动态功能，不提供互动功能，方便大家查看几个自己喜欢的UP主的动态</p>
 
 
-    <!-- <script src="https://jsd.cdn.zzko.cn/npm/@fluentui/web-components/dist/web-components.min.js" type="module"></script> -->
-    <script src="https://unpkg.com/@fluentui/web-components/dist/web-components.min.js" type="module"></script>
-    <!-- <script src="https://jsd.cdn.zzko.cn/npm/@fluentui/web-components/dist/esm/index.js/+esm" type="module"></script> -->
+            <mdui-button variant="filled" class="uid-add">添加</mdui-button>
+            <mdui-button variant="text" class="uid-import">导入</mdui-button>
+            <mdui-button variant="text" class="uid-export">导出</mdui-button>
+            <mdui-list class="uid-list">
+                <mdui-list-item>
+                    UID
+                    <mdui-button-icon icon="keyboard_arrow_up" slot="end-icon" class="uid-top"></mdui-button-icon>
+                    <mdui-button-icon icon="clear" slot="end-icon" class="uid-del"></mdui-button-icon>
+                </mdui-list-item>
+            </mdui-list>
+            <mdui-button variant="elevated" class="uid-save">保存并刷新</mdui-button>
+
+        </mdui-tab-panel>
+        <mdui-tab-panel slot="panel" value="test">
+            Panel 2
+        </mdui-tab-panel>
+    </mdui-tabs>
+
+
+    
     <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <script src="index.js"></script>
 </body>
