@@ -14,8 +14,16 @@
 </head>
 <body>
     <mdui-tabs value="set" placement="left">
-        <mdui-tab value="set">主页</mdui-tab>
-        <mdui-tab value="test">test</mdui-tab>
+        <mdui-tab value="set">
+            <mdui-icon name="home" slot="icon"></mdui-icon>
+            主页
+        </mdui-tab>
+        <mdui-tab value="test">
+            <mdui-avatar src="https://avatars.githubusercontent.com/u/3030330?s=40&v=4" slot="icon"></mdui-avatar>
+            test
+        </mdui-tab>
+
+
         <mdui-tab-panel slot="panel" value="set">
             <h1>UP主动态查看器 - 主页</h1>
             <p>仅提供查看动态功能，不提供互动功能，方便大家查看几个自己喜欢的UP主的动态</p>
@@ -34,9 +42,13 @@
             <mdui-button variant="elevated" class="uid-save">保存并刷新</mdui-button>
 
         </mdui-tab-panel>
+
+
         <mdui-tab-panel slot="panel" value="test">
             Panel 2
         </mdui-tab-panel>
+
+
     </mdui-tabs>
 
 
