@@ -1,11 +1,13 @@
-mdui.setColorScheme('#DD0066');
+mdui.setColorScheme('#FF6699');
 
 var uid_list = [];
+var dyn_detail = {};
 
 const e_uidadd = $('.uid-add');
 const e_uidimp = $('.uid-import');
 const e_uidexp = $('.uid-export');
 const e_uidlist = $('.uid-list');
+const e_uidbtn = $('.uid-save');
 
 e_uidadd.on('click',()=>{
     mdui.prompt({
@@ -103,5 +105,74 @@ function reflash_uid_list(){
             reflash_uid_list();
         });
         e_uidlist.append(item);
+    };
+};
+e_uidbtn.on('click',()=>{
+    localStorage.setItem('UpDyn_uid',JSON.stringify(uid_list));
+    mdui.snackbar({message: "保存成功",closeable: true});
+    location.reload();
+});
+
+
+if(localStorage.getItem('UpDyn_uid')){
+    uid_list = JSON.parse(localStorage.getItem('UpDyn_uid'));
+    reflash_uid_list();
+    //TODO:
+    console.log(dyn_detail);
+} else {
+    uid_list = [];
+};
+
+function get_dyn_detail(){
+    for(var i=0;i<uid_list.length;i++){
+        let uid = uid_list[i];
+        //TODO: 傻逼吧这api，请求出来全是-352
+        $.ajax({
+            url: `https://api.bilibili.com/x/polymer/web-dynamic/v1/feed/space?host_mid=${uid}&dm_img_list=[]&dm_img_str=V2ViR0wgMS&dm_cover_img_str=SW50ZWwoUikgSEQgR3JhcGhpY3NJbnRlbA`,
+            type: "GET",
+            dataType: "json",
+            async: false,
+            headers: {
+                "Bearer": "Bearer",
+                "Identify": "identify_v1",
+                "FormUrlEncodedContentType": "application/x-www-form-urlencoded",
+                "JsonContentType": "application/json",
+                "GRPCContentType": "application/grpc",
+                "UserAgent": "User-Agent",
+                "Referer": "Referer",
+                "AppKey": "APP-KEY",
+                "RequestedWith": "X-Requested-With",
+                "BiliMeta": "x-bili-metadata-bin",
+                "Authorization": "authorization",
+                "BiliDevice": "x-bili-device-bin",
+                "BiliNetwork": "x-bili-network-bin",
+                "BiliRestriction": "x-bili-restriction-bin",
+                "BiliLocale": "x-bili-locale-bin",
+                "BiliFawkes": "x-bili-fawkes-req-bin",
+                "BiliMid": "x-bili-mid",
+                "GRPCAcceptEncodingKey": "grpc-accept-encoding",
+                "GRPCAcceptEncodingValue": "identity,deflate,gzip",
+                "GRPCTimeOutKey": "grpc-timeout",
+                "GRPCTimeOutValue": "20100m",
+                "Envoriment": "env",
+                "TransferEncodingKey": "Transfer-Encoding",
+                "TransferEncodingValue": "chunked",
+                "TEKey": "TE",
+                "TEValue": "trailers",
+                "Buvid": "buvid"
+            },
+            success: function(data){
+                dyn_detail[uid] = data;
+                console.log(dyn_detail);
+            },
+            error: function(xhr, status, error) {
+                console.error(xhr, status, error);
+            },
+        });
+
+
+        new Viewer(document.querySelector(`.pics`),{
+            url: 'data-original'
+        });
     };
 };
