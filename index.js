@@ -125,6 +125,56 @@ if(localStorage.getItem('UpDyn_uid')){
 var req_time = 0;
 var process = [0,0];
 var dyn_obj = []; 
+function get_dyn_detail(){
+    req_time = 0;
+    process = [req_time,uid_list.length];
+    dyn_obj = [];
+    for(var i=0;i<uid_list.length;i++){
+        let uid = uid_list[i];
+        setTimeout(()=>{
+            $.ajax({
+                url: `https://api.bilibili.com/x/space/acc/info?mid=${uid}&jsonp=jsonp`,
+                type: "GET",
+                async: false,
+                success: function(data){
+                    if(data.code==0){
+
+                        // json解析
+                        data = data.data.data.items;
+                        let this_user = {
+                            avatar: '',
+                            name: '',
+                            dyns: [],
+                        }
+                        if(data[0].modules?.module_author?.face){
+                            this_user.avatar = data[0].modules.module_author.face;
+                        } else {this_user.avatar = ''};
+                        if(data[0].modules?.module_author?.name){
+                        } else {this_user.name = ''};
+                        dyn_obj.push(this_user);
+                        for(var j=0;j<data.length;j++){
+                            this_dyn.dyns.push(parse_orig_json(data[j]));
+                        };
+                        //TODO:
+
+
+                        process[0]++;
+                    } else {
+                        mdui.snackbar({message: `获取UID:${uid}动态失败：${status}`,closeable: true});
+                        console.error(xhr);
+                    };
+                },
+                error: function(xhr, status, error) {
+                    process[0]++;
+                    mdui.snackbar({message: `获取UID:${uid}动态失败：${status}`,closeable: true});
+                    console.error(xhr, status, error);
+                },
+            });
+            check_finished();
+        },req_time * 2750);
+        req_time++;
+    };
+};
 /*
 更适合ftz体质的object : dyn_obj
 [
@@ -143,49 +193,59 @@ var dyn_obj = [];
     },
 ]
 */
-function get_dyn_detail(){
-    req_time = 0;
-    process = [req_time,uid_list.length];
-    dyn_obj = [];
-    for(var i=0;i<uid_list.length;i++){
-        let uid = uid_list[i];
-        setTimeout(()=>{
-            $.ajax({
-                url: `https://api.bilibili.com/x/space/acc/info?mid=${uid}&jsonp=jsonp`,
-                type: "GET",
-                async: false,
-                success: function(data){
-                    if(data.code==0){
-                        data = data.data.data.items;
-                        let this_user = {
-                            avatar: data[0].module_author.face,
-                            name: data[0].module_author.name,
-                            dyns: [],
-                        }
-                        for(var j=0;j<data;j++){
-                            let this_dyn = {};
-                            let data_for_process = data[j];
-                            this_dyn.time = data_for_process.module_author.pub_time;
-                            this_dyn.link = `https://t.bilibili.com/${data_for_process.id_str}`;
-                        };
-                        //TODO:
-                        process[0]++;
-                    } else {
-                        mdui.snackbar({message: `获取UID:${uid}动态失败：${status}`,closeable: true});
-                        console.error(xhr);
-                    };
-                },
-                error: function(xhr, status, error) {
-                    process[0]++;
-                    mdui.snackbar({message: `获取UID:${uid}动态失败：${status}`,closeable: true});
-                    console.error(xhr, status, error);
-                },
-            });
-            check_finished();
-        },req_time*1000);
-        req_time++;
+function parse_orig_json(data){
+    let this_dyn = {};
+
+    if(data.modules?.module_author?.pub_time){
+        this_dyn.time = data.modules.module_author.pub_time;
     };
+    if(data.id_str){
+        this_dyn.link = `https://t.bilibili.com/${data.id_str}`;
+    };
+    this_dyn.link = `https://t.bilibili.com/${data.id_str}`;
+    //this_dyn.text = data.modules.module_dynamic.desc.text; // DYNAMIC_TYPE_WORD的opus不适用
+
+    // DYNAMIC_TYPE_WORD 纯文字 DYNAMIC_TYPE_FORWARD 转发 DYNAMIC_TYPE_DRAW 带图 DYNAMIC_TYPE_AV 视频
+    if(data.modules?.type){
+        if(data.modules.type === 'DYNAMIC_TYPE_WORD'){
+            // 纯文字
+            if(data.modules.module_dynamic.major.type === 'MAJOR_TYPE_OPUS'){
+                // opus
+                //TODO:
+            } else {
+                // 纯普通
+                this_dyn.text = data.modules.module_dynamic.desc.text;
+                this_dyn.type = 'text';
+                this_dyn.det = null;
+            };
+        } else if(data.modules.type === 'DYNAMIC_TYPE_FORWARD'){
+            // 转发
+            this_dyn.text = data.modules.module_dynamic.desc.text;
+            this_dyn.type = 'forw';
+            //TODO:
+        } else if(data.modules.type === 'DYNAMIC_TYPE_DRAW'){
+            // 带图
+            this_dyn.text = data.modules.module_dynamic.desc.text;
+            this_dyn.type = 'img';
+            //TODO:
+        } else if(data.modules.type === 'DYNAMIC_TYPE_AV'){
+            // 视频
+            this_dyn.text = data.modules.module_dynamic.desc.text;
+            this_dyn.type = 'vid';
+            //TODO:
+        } else {
+            // 其他
+            this_dyn.text = data.modules.module_dynamic.desc.text;
+            this_dyn.text += `\n\n不支持的动态类型：${data.modules.type}（已显示文本）`
+            this_dyn.type = 'text';
+        };
+    };
+
+
+
+    return  //TODO:
 };
+
 function check_finished(){}; //TODO:
 
 
