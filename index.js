@@ -110,69 +110,86 @@ function reflash_uid_list(){
 e_uidbtn.on('click',()=>{
     localStorage.setItem('UpDyn_uid',JSON.stringify(uid_list));
     mdui.snackbar({message: "保存成功",closeable: true});
-    location.reload();
+    request_dyn();
 });
 
 
 if(localStorage.getItem('UpDyn_uid')){
     uid_list = JSON.parse(localStorage.getItem('UpDyn_uid'));
-    reflash_uid_list();
-    //TODO:
+    get_dyn_detail();
     console.log(dyn_detail);
 } else {
     uid_list = [];
 };
 
+var req_time = 0;
+var process = [0,0];
+var dyn_obj = []; 
+/*
+更适合ftz体质的object : dyn_obj
+[
+    {
+        avatar: str,
+        name: str,
+        dyns: [
+            {
+                time: str,
+                link: str,
+                text: str,
+                type: str, // text纯文本, forw转发, img图片, vid视频
+                det: ... // 转发:{...}, 图片:[str,], 视频:{bv:str,title:str}
+            },
+        ]
+    },
+]
+*/
 function get_dyn_detail(){
+    req_time = 0;
+    process = [req_time,uid_list.length];
+    dyn_obj = [];
     for(var i=0;i<uid_list.length;i++){
         let uid = uid_list[i];
-        //TODO: 傻逼吧这api，请求出来全是-352
-        $.ajax({
-            url: `https://api.bilibili.com/x/polymer/web-dynamic/v1/feed/space?host_mid=${uid}&dm_img_list=[]&dm_img_str=V2ViR0wgMS&dm_cover_img_str=SW50ZWwoUikgSEQgR3JhcGhpY3NJbnRlbA`,
-            type: "GET",
-            dataType: "json",
-            async: false,
-            headers: {
-                "Bearer": "Bearer",
-                "Identify": "identify_v1",
-                "FormUrlEncodedContentType": "application/x-www-form-urlencoded",
-                "JsonContentType": "application/json",
-                "GRPCContentType": "application/grpc",
-                "UserAgent": "User-Agent",
-                "Referer": "Referer",
-                "AppKey": "APP-KEY",
-                "RequestedWith": "X-Requested-With",
-                "BiliMeta": "x-bili-metadata-bin",
-                "Authorization": "authorization",
-                "BiliDevice": "x-bili-device-bin",
-                "BiliNetwork": "x-bili-network-bin",
-                "BiliRestriction": "x-bili-restriction-bin",
-                "BiliLocale": "x-bili-locale-bin",
-                "BiliFawkes": "x-bili-fawkes-req-bin",
-                "BiliMid": "x-bili-mid",
-                "GRPCAcceptEncodingKey": "grpc-accept-encoding",
-                "GRPCAcceptEncodingValue": "identity,deflate,gzip",
-                "GRPCTimeOutKey": "grpc-timeout",
-                "GRPCTimeOutValue": "20100m",
-                "Envoriment": "env",
-                "TransferEncodingKey": "Transfer-Encoding",
-                "TransferEncodingValue": "chunked",
-                "TEKey": "TE",
-                "TEValue": "trailers",
-                "Buvid": "buvid"
-            },
-            success: function(data){
-                dyn_detail[uid] = data;
-                console.log(dyn_detail);
-            },
-            error: function(xhr, status, error) {
-                console.error(xhr, status, error);
-            },
-        });
-
-
-        new Viewer(document.querySelector(`.pics`),{
-            url: 'data-original'
-        });
+        setTimeout(()=>{
+            $.ajax({
+                url: `https://api.bilibili.com/x/space/acc/info?mid=${uid}&jsonp=jsonp`,
+                type: "GET",
+                async: false,
+                success: function(data){
+                    if(data.code==0){
+                        data = data.data.data.items;
+                        let this_user = {
+                            avatar: data[0].module_author.face,
+                            name: data[0].module_author.name,
+                            dyns: [],
+                        }
+                        for(var j=0;j<data;j++){
+                            let this_dyn = {};
+                            let data_for_process = data[j];
+                            this_dyn.time = data_for_process.module_author.pub_time;
+                            this_dyn.link = `https://t.bilibili.com/${data_for_process.id_str}`;
+                        };
+                        //TODO:
+                        process[0]++;
+                    } else {
+                        mdui.snackbar({message: `获取UID:${uid}动态失败：${status}`,closeable: true});
+                        console.error(xhr);
+                    };
+                },
+                error: function(xhr, status, error) {
+                    process[0]++;
+                    mdui.snackbar({message: `获取UID:${uid}动态失败：${status}`,closeable: true});
+                    console.error(xhr, status, error);
+                },
+            });
+            check_finished();
+        },req_time*1000);
+        req_time++;
     };
 };
+function check_finished(){}; //TODO:
+
+
+
+// new Viewer(document.querySelector(`.pics`),{
+//     url: 'data-original'
+// });
