@@ -58,7 +58,7 @@ ul.pics li img{
     flex-direction: row;
     gap: 10px;
 }
-.more-details.video img{
+.more-details.video > mdui-tooltip > img{
     width: 40%;
     max-height: 100%;
 }

@@ -61,7 +61,7 @@ e_uidimp.on('click',()=>{
                             if(Array.isArray(data)){
                                 uid_list = data;
                                 mdui.snackbar({message: "导入成功",closeable: true});
-                                reflash_uid_list();
+                                localStorage.setItem('UpDyn_uid',JSON.stringify(uid_list))
                             }else{
                                 mdui.snackbar({message: "导入失败",closeable: true});
                             };
@@ -106,11 +106,12 @@ function reflash_uid_list(){
         });
         e_uidlist.append(item);
     };
+    localStorage.setItem('UpDyn_uid',JSON.stringify(uid_list));
 };
 e_uidbtn.on('click',()=>{
     localStorage.setItem('UpDyn_uid',JSON.stringify(uid_list));
-    mdui.snackbar({message: "保存成功",closeable: true});
-    request_dyn();
+    //TODO:
+    get_dyn_detail();
 });
 
 
@@ -139,7 +140,7 @@ function get_dyn_detail(){
                 success: function(data){
                     if(data.code==0){
 
-                        // json解析
+                        // json解析1
                         data = data.data.data.items;
                         let this_user = {
                             avatar: '',
@@ -151,13 +152,10 @@ function get_dyn_detail(){
                         } else {this_user.avatar = ''};
                         if(data[0].modules?.module_author?.name){
                         } else {this_user.name = ''};
-                        dyn_obj.push(this_user);
                         for(var j=0;j<data.length;j++){
-                            this_dyn.dyns.push(parse_orig_json(data[j]));
+                            this_user.dyns.push(parse_orig_json(data[j]));
                         };
-                        //TODO:
-
-
+                        dyn_obj.push(this_user);
                         process[0]++;
                     } else {
                         mdui.snackbar({message: `获取UID:${uid}动态失败：${status}`,closeable: true});
@@ -187,13 +185,13 @@ function get_dyn_detail(){
                 link: str,
                 text: str,
                 type: str, // text纯文本, forw转发, img图片, vid视频
-                det: ... // 转发:{...}, 图片:[str,], 视频:{bv:str,title:str}
+                det: ... // 转发:{...}, 图片:[str,], 视频:{bv:str,title:str,cover:str,desc:str}
             },
         ]
     },
 ]
 */
-function parse_orig_json(data){
+function parse_orig_json(data){ // json解析2
     let this_dyn = {};
 
     if(data.modules?.module_author?.pub_time){
@@ -209,44 +207,88 @@ function parse_orig_json(data){
     if(data.modules?.type){
         if(data.modules.type === 'DYNAMIC_TYPE_WORD'){
             // 纯文字
-            if(data.modules.module_dynamic.major.type === 'MAJOR_TYPE_OPUS'){
+            if(data.modules.module_dynamic.major.type === 'MAJOR_TYPE_OPUS' 
+                && data.modules.module_dynamic.desc === null 
+                && data.modules.module_dynamic.major?.opus){
                 // opus
-                //TODO:
+                this_dyn.text = '';
+                if(data.modules.module_dynamic.major.opus.title){
+                    this_dyn.text += `<b>${data.modules.module_dynamic.major.opus.title}</b>\n`;
+                };
+                if(data.modules.module_dynamic.major.opus.summary?.text){
+                    this_dyn.text += data.modules.module_dynamic.major.opus.summary.text;
+                };
             } else {
                 // 纯普通
-                this_dyn.text = data.modules.module_dynamic.desc.text;
-                this_dyn.type = 'text';
-                this_dyn.det = null;
+                if(data.modules?.module_dynamic?.desc?.text){
+                    this_dyn.text = data.modules.module_dynamic.desc.text;
+                } else { this_dyn.text = ''; };
             };
+            this_dyn.type = 'text';
+            this_dyn.det = null;
         } else if(data.modules.type === 'DYNAMIC_TYPE_FORWARD'){
             // 转发
-            this_dyn.text = data.modules.module_dynamic.desc.text;
-            this_dyn.type = 'forw';
-            //TODO:
+            if(data.modules?.module_dynamic?.desc?.text){
+                this_dyn.text = data.modules.module_dynamic.desc.text;
+            } else { this_dyn.text = ''; };
+            this_dyn.type = 'text';
+            if(data.orig){
+                this_dyn.type = 'forw';
+                this_dyn.det = parse_orig_json(data.orig);
+            };
         } else if(data.modules.type === 'DYNAMIC_TYPE_DRAW'){
+            if(data.modules?.module_dynamic?.desc?.text){
+                this_dyn.text = data.modules.module_dynamic.desc.text;
+            } else { this_dyn.text = ''; };
             // 带图
-            this_dyn.text = data.modules.module_dynamic.desc.text;
-            this_dyn.type = 'img';
-            //TODO:
+            if(data.modules?.module_dynamic?.major?.draw?.items && data.modules.module_dynamic.major.draw.items.length>0){
+                this_dyn.det = [];
+                for(var i=0;i<data.modules.module_dynamic.major.draw.items.length;i++){
+                    if(data.modules.module_dynamic.major.draw.items[i].src){
+                        this_dyn.det.push(data.modules.module_dynamic.major.draw.items[i].src);
+                    };
+                };
+                this_dyn.type = 'img';
+            } else {
+                this_dyn.type = 'text';
+            };
         } else if(data.modules.type === 'DYNAMIC_TYPE_AV'){
+            if(data.modules?.module_dynamic?.desc?.text){
+                this_dyn.text = data.modules.module_dynamic.desc.text;
+            } else { this_dyn.text = ''; };
             // 视频
-            this_dyn.text = data.modules.module_dynamic.desc.text;
-            this_dyn.type = 'vid';
-            //TODO:
+            if(data.modules?.module_dynamic?.archive){
+                this_dyn.det = {
+                    bv: data.modules.module_dynamic.archive.bvid,
+                    title: data.modules.module_dynamic.archive.title,
+                    cover: data.modules.module_dynamic.archive.cover,
+                    desc: data.modules.module_dynamic.archive.desc,
+                };
+                this_dyn.type = 'vid';
+            } else {
+                this_dyn.type = 'text';
+            };
         } else {
             // 其他
-            this_dyn.text = data.modules.module_dynamic.desc.text;
-            this_dyn.text += `\n\n不支持的动态类型：${data.modules.type}（已显示文本）`
+            if(data.modules?.module_dynamic?.desc?.text){
+                this_dyn.text = data.modules.module_dynamic.desc.text;
+                this_dyn.text += '\n\n';
+            } else { this_dyn.text = ''; };
+            this_dyn.text += `（已显示文本）不支持的动态类型：${data.modules.type}`
             this_dyn.type = 'text';
         };
     };
-
-
-
-    return  //TODO:
+    return this_dyn;
 };
 
-function check_finished(){}; //TODO:
+function check_finished(){
+    if(process[0] >= process[1]){
+        console.log(dyn_obj);
+        //TODO:
+    } else {
+        //TODO: 进度条
+    };
+};
 
 
 
