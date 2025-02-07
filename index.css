@@ -13,11 +13,12 @@ mdui-tab-panel{
     overflow-y: auto;
 }
 mdui-card{
-    width: 80%;
+    width: calc(100% - 30px);
     margin: 15px;
     padding: 20px;
     display: flex;
     flex-direction: column;
+    box-sizing: border-box;
 }
 .top-details{
     display: flex;
@@ -59,8 +60,9 @@ ul.pics li img{
     gap: 10px;
 }
 .more-details.video > mdui-tooltip > img{
-    width: 40%;
+    max-width: 40%;
     max-height: 100%;
+    object-fit: contain;
 }
 .more-details.video > div > b{
     font-size: 20px;

@@ -12,6 +12,8 @@ const e_uidbtn = $('.uid-save');
 const e_dia = $('.req-dia');
 const e_dia_bar = $('.req-dia > mdui-linear-progress');
 
+const e_tabs_containter = $('mdui-tabs');
+
 e_uidadd.on('click',()=>{
     mdui.prompt({
         headline: "添加UID",
@@ -198,7 +200,9 @@ function parse_orig_json(data){ // json解析2
 
     if(data.modules?.module_author?.pub_time){
         this_dyn.time = data.modules.module_author.pub_time;
-    };
+    } else if (data.modules?.module_author?.pub_ts){
+        this_dyn.time = `${new Date(data.modules.module_author.pub_ts * 1000).getFullYear()}年${new Date(data.modules.module_author.pub_ts * 1000).getMonth()+1}月${new Date(data.modules.module_author.pub_ts * 1000).getDate()}日`;
+    } else {this_dyn.time = '(时间不可用)'};
     if(data.id_str){
         this_dyn.link = `https://t.bilibili.com/${data.id_str}`;
     };
@@ -216,15 +220,15 @@ function parse_orig_json(data){ // json解析2
                 // opus
                 this_dyn.text = '';
                 if(data.modules.module_dynamic.major.opus.title){
-                    this_dyn.text += `<b>${data.modules.module_dynamic.major.opus.title}</b>\n`;
+                    this_dyn.text += `<b>${data.modules.module_dynamic.major.opus.title}</b><br>`;
                 };
                 if(data.modules.module_dynamic.major.opus.summary?.text){
-                    this_dyn.text += data.modules.module_dynamic.major.opus.summary.text;
+                    this_dyn.text += data.modules.module_dynamic.major.opus.summary.text.replace(/(\r\n|\n)/g,'<br>');
                 };
             } else {
                 // 纯普通
                 if(data.modules?.module_dynamic?.desc?.text){
-                    this_dyn.text = data.modules.module_dynamic.desc.text;
+                    this_dyn.text = data.modules.module_dynamic.desc.text.replace(/(\r\n|\n)/g,'<br>');
                 } else { this_dyn.text = ''; };
             };
             this_dyn.type = 'text';
@@ -232,7 +236,7 @@ function parse_orig_json(data){ // json解析2
         } else if(data.type === 'DYNAMIC_TYPE_FORWARD'){
             // 转发
             if(data.modules?.module_dynamic?.desc?.text){
-                this_dyn.text = data.modules.module_dynamic.desc.text;
+                this_dyn.text = data.modules.module_dynamic.desc.text.replace(/(\r\n|\n)/g,'<br>');
             } else { this_dyn.text = ''; };
             this_dyn.type = 'text';
             if(data.orig){
@@ -247,10 +251,10 @@ function parse_orig_json(data){ // json解析2
             ){
                 this_dyn.text = '';
                 if(data.modules.module_dynamic.major.opus.title){
-                    this_dyn.text += `<b>${data.modules.module_dynamic.major.opus.title}</b>\n`;
+                    this_dyn.text += `<b>${data.modules.module_dynamic.major.opus.title}</b><br>`;
                 };
                 if(data.modules.module_dynamic.major.opus.summary?.text){
-                    this_dyn.text += data.modules.module_dynamic.major.opus.summary.text;
+                    this_dyn.text += data.modules.module_dynamic.major.opus.summary.text.replace(/(\r\n|\n)/g,'<br>');
                 };
                 if(data.modules.module_dynamic.major.opus.pics && data.modules.module_dynamic.major.opus.pics.length>0){
                     this_dyn.det = [];
@@ -265,7 +269,7 @@ function parse_orig_json(data){ // json解析2
                 };
             } else {
                 if(data.modules?.module_dynamic?.desc?.text){
-                    this_dyn.text = data.modules.module_dynamic.desc.text;
+                    this_dyn.text = data.modules.module_dynamic.desc.text.replace(/(\r\n|\n)/g,'<br>');
                 } else { this_dyn.text = ''; };
                 if(data.modules?.module_dynamic?.major?.draw?.items && data.modules.module_dynamic.major.draw.items.length>0){
                     this_dyn.det = [];
@@ -281,7 +285,7 @@ function parse_orig_json(data){ // json解析2
             };
         } else if(data.type === 'DYNAMIC_TYPE_AV'){
             if(data.modules?.module_dynamic?.desc?.text){
-                this_dyn.text = data.modules.module_dynamic.desc.text;
+                this_dyn.text = data.modules.module_dynamic.desc.text.replace(/(\r\n|\n)/g,'<br>');
             } else { this_dyn.text = ''; };
             // 视频
             if(data.modules?.module_dynamic?.major?.archive){
@@ -289,7 +293,7 @@ function parse_orig_json(data){ // json解析2
                     bv: data.modules.module_dynamic.major.archive.bvid,
                     title: data.modules.module_dynamic.major.archive.title,
                     cover: data.modules.module_dynamic.major.archive.cover,
-                    desc: data.modules.module_dynamic.major.archive.desc,
+                    desc: data.modules.module_dynamic.major.archive.desc.replace(/(\r\n|\n)/g,'<br>'),
                 };
                 this_dyn.type = 'vid';
             } else {
@@ -298,8 +302,8 @@ function parse_orig_json(data){ // json解析2
         } else {
             // 其他
             if(data.modules?.module_dynamic?.desc?.text){
-                this_dyn.text = data.modules.module_dynamic.desc.text;
-                this_dyn.text += '\n\n';
+                this_dyn.text = data.modules.module_dynamic.desc.text.replace(/(\r\n|\n)/g,'<br>');
+                this_dyn.text += '<br><br>';
             } else { this_dyn.text = ''; };
             this_dyn.text += `（已显示文本）不支持的动态类型：${data.type}`
             this_dyn.type = 'text';
@@ -307,22 +311,72 @@ function parse_orig_json(data){ // json解析2
     };
     return this_dyn;
 };
-
 function check_finished(){
     if(process[0] >= process[1]){
-        //console.log(dyn_obj);
+        console.log(dyn_obj);
         e_dia_bar.attr('value',1);
         setTimeout(()=>{
             e_dia.removeAttr('open');
-        },100);
-        //TODO:
+        },200);
+        e_uidbtn.remove();
+        obj2dom();
     } else {
         e_dia_bar.attr('value',process[0]/process[1]);
     };
 };
 
-
-
-// new Viewer(document.querySelector(`.pics`),{
-//     url: 'data-original'
-// });
+function obj2dom(){
+    for(let i=0;i<dyn_obj.length;i++){
+        let user = dyn_obj[i];
+        let tab = `<mdui-tab value="${i}"><mdui-avatar src="https://api.allorigins.win/raw?url=${user.avatar}" slot="icon"></mdui-avatar>${user.name}</mdui-tab>`;
+        e_tabs_containter.append(tab);
+        let panel = `<mdui-tab-panel value="${i}" class="dyn-panel" slot="panel">`;
+        for(let j=0;j<user.dyns.length;j++){
+            let dyn = user.dyns[j];
+            panel += dyn2card(dyn);
+        };
+        panel += `</mdui-tab-panel>`;
+        e_tabs_containter.append($(panel));
+    };
+    new Viewer(document.querySelector(`.pics`),{
+        url: 'data-original'
+    });
+};
+function dyn2card(dyn){
+    let card = '';
+    switch(dyn.type){
+        case 'text':
+            card += `<mdui-card clickable><div class="top-details"><p>${dyn.time}</p>
+                <mdui-button-icon icon="open_in_new" href="${dyn.link}" target="_blank"></mdui-button-icon></div>
+                <div class="content">${dyn.text}</div></mdui-card>`;
+            break;
+        case 'forw':
+            card += `<mdui-card clickable><div class="top-details"><p>${dyn.time}</p>
+                <mdui-button-icon icon="open_in_new" href="${dyn.link}" target="_blank"></mdui-button-icon></div>
+                <div class="content">${dyn.text}</div>
+                <div class="more-details">${dyn2card(dyn.det)}</div></mdui-card>`;
+            break;
+        case 'img':
+            card += `<mdui-card clickable><div class="top-details"><p>${dyn.time}</p>
+                <mdui-button-icon icon="open_in_new" href="${dyn.link}" target="_blank"></mdui-button-icon></div>
+                <div class="content">${dyn.text}</div><div class="more-details"><ul class="pics">`;
+                for(let j=0;j<dyn.det.length;j++){
+                    card += `<li><img data-original="https://api.allorigins.win/raw?url=${dyn.det[j]}" src="https://api.allorigins.win/raw?url=${dyn.det[j]}" loading="lazy"></li>`;
+                };
+            card += `</ul></div></mdui-card>`;
+            break;
+        case 'vid':
+            card += `<mdui-card clickable><div class="top-details"><p>${dyn.time}</p>
+                <mdui-button-icon icon="open_in_new" href="${dyn.link}" target="_blank"></mdui-button-icon></div>
+                <div class="content">${dyn.text}</div><div class="more-details video">
+                <mdui-tooltip content="${dyn.det.desc}">
+                <img src="https://api.allorigins.win/raw?url=${dyn.det.cover}" loading="lazy"></mdui-tooltip>
+                <div><b>${dyn.det.title}</b>
+                <mdui-chip href="https://www.bilibili.com/video/${dyn.det.bv}" target="_blank" icon="movie--outlined">原视频链接</mdui-chip>
+                <mdui-chip href="https://player.bilibili.com/player.html?bvid=${dyn.det.bv}" target="_blank" icon="movie--outlined">iframe视频链接</mdui-chip>
+                <mdui-chip onclick="navigator.clipboard.writeText('${dyn.det.bv}').then(()=>mdui.snackbar({message: '已复制',closeable: true}))" icon="content_copy">复制BV号</mdui-chip>
+                </div></div></mdui-card>`;
+            break;
+    };
+    return card;
+};
