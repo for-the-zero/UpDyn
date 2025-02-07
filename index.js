@@ -9,6 +9,9 @@ const e_uidexp = $('.uid-export');
 const e_uidlist = $('.uid-list');
 const e_uidbtn = $('.uid-save');
 
+const e_dia = $('.req-dia');
+const e_dia_bar = $('.req-dia > mdui-linear-progress');
+
 e_uidadd.on('click',()=>{
     mdui.prompt({
         headline: "添加UID",
@@ -61,7 +64,7 @@ e_uidimp.on('click',()=>{
                             if(Array.isArray(data)){
                                 uid_list = data;
                                 mdui.snackbar({message: "导入成功",closeable: true});
-                                localStorage.setItem('UpDyn_uid',JSON.stringify(uid_list))
+                                reflash_uid_list();
                             }else{
                                 mdui.snackbar({message: "导入失败",closeable: true});
                             };
@@ -110,15 +113,16 @@ function reflash_uid_list(){
 };
 e_uidbtn.on('click',()=>{
     localStorage.setItem('UpDyn_uid',JSON.stringify(uid_list));
-    //TODO:
+    e_dia_bar.attr('value',0);
+    e_dia.attr('open',true);
     get_dyn_detail();
 });
 
 
 if(localStorage.getItem('UpDyn_uid')){
     uid_list = JSON.parse(localStorage.getItem('UpDyn_uid'));
-    get_dyn_detail();
-    console.log(dyn_detail);
+    reflash_uid_list();
+    console.log(uid_list);
 } else {
     uid_list = [];
 };
@@ -134,33 +138,31 @@ function get_dyn_detail(){
         let uid = uid_list[i];
         setTimeout(()=>{
             $.ajax({
-                url: `https://api.bilibili.com/x/space/acc/info?mid=${uid}&jsonp=jsonp`,
+                url: `https://forthezero.pythonanywhere.com/dynp?host_mid=${uid}`,
                 type: "GET",
+                dataType: "json",
                 async: false,
-                success: function(data){
-                    if(data.code==0){
+                success: function(data, status, xhr){
 
-                        // json解析1
-                        data = data.data.data.items;
-                        let this_user = {
-                            avatar: '',
-                            name: '',
-                            dyns: [],
-                        }
-                        if(data[0].modules?.module_author?.face){
-                            this_user.avatar = data[0].modules.module_author.face;
-                        } else {this_user.avatar = ''};
-                        if(data[0].modules?.module_author?.name){
-                        } else {this_user.name = ''};
-                        for(var j=0;j<data.length;j++){
-                            this_user.dyns.push(parse_orig_json(data[j]));
-                        };
-                        dyn_obj.push(this_user);
-                        process[0]++;
-                    } else {
-                        mdui.snackbar({message: `获取UID:${uid}动态失败：${status}`,closeable: true});
-                        console.error(xhr);
+                    // json解析1
+                    data = data.items;
+                    let this_user = {
+                        avatar: '',
+                        name: '',
+                        dyns: [],
+                    }
+                    if(data[0].modules?.module_author?.face){
+                        this_user.avatar = data[0].modules.module_author.face;
+                    } else {this_user.avatar = ''};
+                    if(data[0].modules?.module_author?.name){
+                        this_user.name = data[0].modules.module_author.name;
+                    } else {this_user.name = ''};
+                    for(var j=0;j<data.length;j++){
+                        this_user.dyns.push(parse_orig_json(data[j]));
                     };
+                    dyn_obj.push(this_user);
+                    process[0]++;
+
                 },
                 error: function(xhr, status, error) {
                     process[0]++;
@@ -204,12 +206,13 @@ function parse_orig_json(data){ // json解析2
     //this_dyn.text = data.modules.module_dynamic.desc.text; // DYNAMIC_TYPE_WORD的opus不适用
 
     // DYNAMIC_TYPE_WORD 纯文字 DYNAMIC_TYPE_FORWARD 转发 DYNAMIC_TYPE_DRAW 带图 DYNAMIC_TYPE_AV 视频
-    if(data.modules?.type){
-        if(data.modules.type === 'DYNAMIC_TYPE_WORD'){
+    if(data.type){
+        if(data.type === 'DYNAMIC_TYPE_WORD'){
             // 纯文字
             if(data.modules.module_dynamic.major.type === 'MAJOR_TYPE_OPUS' 
                 && data.modules.module_dynamic.desc === null 
-                && data.modules.module_dynamic.major?.opus){
+                && data.modules.module_dynamic.major?.opus
+            ){
                 // opus
                 this_dyn.text = '';
                 if(data.modules.module_dynamic.major.opus.title){
@@ -226,7 +229,7 @@ function parse_orig_json(data){ // json解析2
             };
             this_dyn.type = 'text';
             this_dyn.det = null;
-        } else if(data.modules.type === 'DYNAMIC_TYPE_FORWARD'){
+        } else if(data.type === 'DYNAMIC_TYPE_FORWARD'){
             // 转发
             if(data.modules?.module_dynamic?.desc?.text){
                 this_dyn.text = data.modules.module_dynamic.desc.text;
@@ -236,33 +239,57 @@ function parse_orig_json(data){ // json解析2
                 this_dyn.type = 'forw';
                 this_dyn.det = parse_orig_json(data.orig);
             };
-        } else if(data.modules.type === 'DYNAMIC_TYPE_DRAW'){
-            if(data.modules?.module_dynamic?.desc?.text){
-                this_dyn.text = data.modules.module_dynamic.desc.text;
-            } else { this_dyn.text = ''; };
+        } else if(data.type === 'DYNAMIC_TYPE_DRAW'){
             // 带图
-            if(data.modules?.module_dynamic?.major?.draw?.items && data.modules.module_dynamic.major.draw.items.length>0){
-                this_dyn.det = [];
-                for(var i=0;i<data.modules.module_dynamic.major.draw.items.length;i++){
-                    if(data.modules.module_dynamic.major.draw.items[i].src){
-                        this_dyn.det.push(data.modules.module_dynamic.major.draw.items[i].src);
-                    };
+            if(data.modules.module_dynamic.major.type === 'MAJOR_TYPE_OPUS' 
+                && data.modules.module_dynamic.desc === null 
+                && data.modules.module_dynamic.major?.opus
+            ){
+                this_dyn.text = '';
+                if(data.modules.module_dynamic.major.opus.title){
+                    this_dyn.text += `<b>${data.modules.module_dynamic.major.opus.title}</b>\n`;
                 };
-                this_dyn.type = 'img';
+                if(data.modules.module_dynamic.major.opus.summary?.text){
+                    this_dyn.text += data.modules.module_dynamic.major.opus.summary.text;
+                };
+                if(data.modules.module_dynamic.major.opus.pics && data.modules.module_dynamic.major.opus.pics.length>0){
+                    this_dyn.det = [];
+                    for(let k=0;k<data.modules.module_dynamic.major.opus.pics.length;k++){
+                        if(data.modules.module_dynamic.major.opus.pics[k].url){
+                            this_dyn.det.push(data.modules.module_dynamic.major.opus.pics[k].url);
+                        };
+                    };
+                    this_dyn.type = 'img';
+                } else {
+                    this_dyn.type = 'text';
+                };
             } else {
-                this_dyn.type = 'text';
+                if(data.modules?.module_dynamic?.desc?.text){
+                    this_dyn.text = data.modules.module_dynamic.desc.text;
+                } else { this_dyn.text = ''; };
+                if(data.modules?.module_dynamic?.major?.draw?.items && data.modules.module_dynamic.major.draw.items.length>0){
+                    this_dyn.det = [];
+                    for(let k=0;k<data.modules.module_dynamic.major.draw.items.length;k++){
+                        if(data.modules.module_dynamic.major.draw.items[k].src){
+                            this_dyn.det.push(data.modules.module_dynamic.major.draw.items[k].src);
+                        };
+                    };
+                    this_dyn.type = 'img';
+                } else {
+                    this_dyn.type = 'text';
+                };
             };
-        } else if(data.modules.type === 'DYNAMIC_TYPE_AV'){
+        } else if(data.type === 'DYNAMIC_TYPE_AV'){
             if(data.modules?.module_dynamic?.desc?.text){
                 this_dyn.text = data.modules.module_dynamic.desc.text;
             } else { this_dyn.text = ''; };
             // 视频
-            if(data.modules?.module_dynamic?.archive){
+            if(data.modules?.module_dynamic?.major?.archive){
                 this_dyn.det = {
-                    bv: data.modules.module_dynamic.archive.bvid,
-                    title: data.modules.module_dynamic.archive.title,
-                    cover: data.modules.module_dynamic.archive.cover,
-                    desc: data.modules.module_dynamic.archive.desc,
+                    bv: data.modules.module_dynamic.major.archive.bvid,
+                    title: data.modules.module_dynamic.major.archive.title,
+                    cover: data.modules.module_dynamic.major.archive.cover,
+                    desc: data.modules.module_dynamic.major.archive.desc,
                 };
                 this_dyn.type = 'vid';
             } else {
@@ -274,7 +301,7 @@ function parse_orig_json(data){ // json解析2
                 this_dyn.text = data.modules.module_dynamic.desc.text;
                 this_dyn.text += '\n\n';
             } else { this_dyn.text = ''; };
-            this_dyn.text += `（已显示文本）不支持的动态类型：${data.modules.type}`
+            this_dyn.text += `（已显示文本）不支持的动态类型：${data.type}`
             this_dyn.type = 'text';
         };
     };
@@ -283,10 +310,14 @@ function parse_orig_json(data){ // json解析2
 
 function check_finished(){
     if(process[0] >= process[1]){
-        console.log(dyn_obj);
+        //console.log(dyn_obj);
+        e_dia_bar.attr('value',1);
+        setTimeout(()=>{
+            e_dia.removeAttr('open');
+        },100);
         //TODO:
     } else {
-        //TODO: 进度条
+        e_dia_bar.attr('value',process[0]/process[1]);
     };
 };
 

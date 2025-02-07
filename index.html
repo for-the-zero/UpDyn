@@ -131,10 +131,17 @@
 
     </mdui-tabs>
 
+    <mdui-dialog class="req-dia"
+        headline="请求中……"
+        description="为防止触发api风控，请求有速率限制，请耐心等待"
+    >
+        <mdui-linear-progress value="0.5"></mdui-linear-progress>
+    </mdui-dialog>
+
 
     
-    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-    <script src="https://cdn.bootcdn.net/ajax/libs/viewerjs/1.11.7/viewer.min.js"></script>
+    <script src="http://unpkg.com/jquery/dist/jquery.min.js"></script>
+    <script src="https://unpkg.com/viewerjs@1.11.7/dist/viewer.min.js"></script>
     <script src="index.js"></script>
 </body>
 </html>
