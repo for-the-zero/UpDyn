@@ -6,7 +6,7 @@ An online tool for viewing Bilibili user's dynamics(posts)
 
 [GitHub Pages](//for-the-zero.github.io/quicktools/updyn/index.html) | [Netlify](//ftz-tools.netlify.app/updyn/index.html)
 
-该项目仅供交流学习使用 <span style="color: white;">其实主要是想要让我在电脑课的垃圾电脑上看看B站动态，B站网页对它来说太卡了</span>
+该项目仅供交流学习使用
 
 This project is for learning and communication only.
 
@@ -52,4 +52,4 @@ This project is for learning and communication only.
 - jQuery
 - viewer.js
 - mdui
-- allorigin ~~(希望后续更新能代替)~~
+- allorigins
