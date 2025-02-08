@@ -4,7 +4,7 @@
 
 An online tool for viewing Bilibili user's dynamics(posts)
 
-[GitHub Pages](//for-the-zero.github.io/quicktools/updyn/index.html) | [Netlify](//ftz-tools.netlify.app/updyn/index.html)
+[GitHub Pages](htps://for-the-zero.github.io/quicktools/updyn/index.html) | [Netlify](htps://ftz-tools.netlify.app/updyn/index.html)
 
 该项目仅供交流学习使用
 
@@ -52,4 +52,4 @@ This project is for learning and communication only.
 - jQuery
 - viewer.js
 - mdui
-- allorigins
+- wsrv.nl
