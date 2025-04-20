@@ -58,14 +58,13 @@ def get_bilibili_dynamic(host_mid, offset="", timezone_offset="-480", features="
         "buvid": generate_buvid(),
         "env": "prod",
         "app-key": "android_hd",
-        "x-bili-mid": "12345678",  # 替换为你的 mid
-        "Cookie": "SESSDATA=your_sessdata; bili_jct=your_bili_jct;"  # 替换为你的登录 Cookie
     }
     img_key, sub_key = get_wbi_keys()
     signed_params = enc_wbi(params, img_key, sub_key)
     response = requests.get(url, params=signed_params, headers=headers)
     if response.status_code == 200:
         data = response.json()
+        print(data)
         if data["code"] == 0:
             return data["data"]
         else:
@@ -78,13 +77,14 @@ def generate_buvid():
     uuid_str = str(uuid.uuid4()).replace("-", "")
     return "XY" + uuid_str[:35].upper()
 
-@app.route('/get_bilibili_dynamic', methods=['GET'])
+@app.route('/dyn', methods=['GET'])
 def bilibili_dynamic_api():
-    host_mid = request.args.get('host_mid', default=12345678, type=int)
+    host_mid = request.args.get('host_mid', default=513066052, type=int)
     dynamic_data = get_bilibili_dynamic(host_mid)
     if dynamic_data:
         return jsonify(dynamic_data)
     else:
+        print(dynamic_data)
         return jsonify({"error": "Failed to fetch data"}), 500
 
 if __name__ == "__main__":
